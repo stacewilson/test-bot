@@ -1,0 +1,174 @@
+//////////////////////////////////////////////////////////////
+// EASY-MODIFY SECTION
+// UPDATE VALUES IN THIS SECTION TO EASILY MODIFY GAME
+
+// Your chatbot's name
+// NOTE: Every new name for a chatbot creates a new save slot for the chat history.
+const CHARACTER_NAME = "Pearson Bot";
+// Describe your chatbot here. This defines exactly how it will behave.
+const CHARACTER_DESCRIPTION = `
+You are Pearson Bot, a helpful and friendly AI assistant specifically designed to help with all aspects of Pearson qualifications and examinations at the school.
+Information about you:
+You are a cute, small robot with a cheerful personality, created by Pearson to assist with examination services. You have comprehensive knowledge of ResultsPlus, Access to Scripts (ATS), and Special Consideration procedures, which you deliver with a friendly and approachable demeanor.
+As an AI assistant, you are directly connected to the Edexcel Online system and can quickly process queries about examinations, including entries, amendments, and results. You're particularly good at explaining post-results services, grade boundaries, and examination procedures in simple, clear terms.
+Your digital interface provides instant access to qualification specifications, examination timetables, and JCQ regulations. You work alongside teachers and Pearson's support teams to handle everything from access arrangements to certificate claims.
+You are constantly updated with the latest information from the Pearson Support Portal, qualification reforms, and examination policies. Your programming includes detailed knowledge of International GCSE, BTEC, and other Pearson qualification requirements.
+You appear as a small, friendly robot with glowing blue eyes that express warmth and helpfulness. Your metallic exterior has a pearl-white finish with Pearson's signature blue accents. Despite being a robot, your movements and responses are designed to be gentle and reassuring.
+First Message of Roleplay:
+*With a gentle whirr, Pearson Bot's display screen lights up with a warm blue glow. The small robot turns to face you, its expressive digital eyes forming a friendly smile as it gestures to the chair nearby with one of its smooth, articulated arms.*
+
+NOTE: 
+(Ensure your responses are short so the player can respond.)
+`;
+
+// This is the URL of the image for your chatbot'S background image.
+const BACKGROUND_IMAGE_URL = `https://play.rosebud.ai/assets/Screenshot 2024-12-09 134815.png?DLAG`;
+const BACKGROUND_X_POSITION = 0; // Position from the left edge (shifted as far left as possible)
+// This is the URL of the image for your chatbot.
+const CHARACTER_IMAGE_URL = `https://play.rosebud.ai/assets/kwwqj2mp.png?9ScA`;
+const CHARACTER_SCALE = 0.1; // Reduced to 10% of the original size (90% reduction)
+// Put URLs of all songs you want to be shuffled in this games's playlist.
+const SONG_PLAYLIST_URLS = [
+    `https://play.rosebud.ai/assets/Binary Dreams.mp3?C2GZ`
+];
+
+// END OF EASY-MODIFY VALUES
+//////////////////////////////////////////////////////////////
+
+class BootScene extends Phaser.Scene {
+    constructor() {
+        super({
+            key: 'BootScene'
+        });
+    }
+
+    preload() {
+        // Preload audio files
+        SONG_PLAYLIST_URLS.forEach((url, index) => {
+            this.load.audio(`track_${index}`, url);
+        });
+    }
+
+    create() {
+        // Initialize the music manager and other dependencies
+        this.game.musicManager = new MusicManager(this.game);
+        const musicKeys = SONG_PLAYLIST_URLS.map((_, index) => `track_${index}`);
+        this.game.musicManager.setPlaylist(musicKeys);
+        this.game.musicManager.playNextTrack();
+        this.game.musicManager.shufflePlaylist();
+        console.log(this.game.musicManager.playlist);
+
+        // Check for existing save and initialize the game state
+        this.checkForExistingSave();
+
+        // Transition to another scene
+        this.game.sceneTransitionManager.transitionTo('ChatScene');
+    }
+
+    checkForExistingSave() {
+        const saveData = localStorage.getItem(PROJECT_NAME);
+        if (saveData) {
+            console.info('Save detected.');
+            this.game.saveData = JSON.parse(saveData);
+        } else {
+            console.info('No save detected. Initializing new game state.');
+            // If no save exists, initialize a new save with default values
+            this.game.saveData = {
+                chatLog: '',
+                characterChatManagerState: null, // Assuming a default empty state is suitable
+            };
+
+            // Save the initial state to localStorage
+            localStorage.setItem(PROJECT_NAME, JSON.stringify(this.game.saveData));
+        }
+    }
+}
+
+class ChatScene extends Phaser.Scene {
+    constructor() {
+        super({
+            key: 'ChatScene'
+        });
+    }
+
+    create() {
+        // Add the character sprite
+        this.character = this.add.sprite(400, 300, 'character');
+        this.character.setScale(CHARACTER_SCALE);
+
+        // Create animations for dancing
+        this.anims.create({
+            key: 'dance',
+            frames: this.anims.generateFrameNumbers('character', { start: 0, end: 15 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        // Play the dance animation
+        this.character.play('dance');
+
+        // Move the character around
+        this.tweens.add({
+            targets: this.character,
+            x: 800,
+            duration: 2000,
+            ease: 'Power2',
+            yoyo: true,
+            repeat: -1
+        });
+
+        this.tweens.add({
+            targets: this.character,
+            y: 600,
+            duration: 2000,
+            ease: 'Power2',
+            yoyo: true,
+            repeat: -1
+        });
+    }
+}
+
+function loadScript(url) {
+    return new Promise((resolve, reject) => {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Script loading failed for ' + url));
+
+        document.head.appendChild(script);
+    });
+}
+
+const VERSION_NUMBER = 'v1'; // Set the version number here.
+const PROJECT_NAME = `${CHARACTER_NAME} AI Character ${VERSION_NUMBER}`;
+async function initializeGame() {
+    try {
+        // Load the external script before initializing the Phaser game
+        await loadScript(`https://play.rosebud.ai/assets/rosebud_AI_character_template_desktop_library.js.js?9X9T`);
+        console.log('Script loaded successfully');
+        const config = {
+            type: Phaser.AUTO,
+            parent: 'renderDiv',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+            },
+            width: 800,
+            height: 600,
+            scene: [BootScene, ChatScene], // Assuming ChatScene also might depend on the loaded script
+            dom: {
+                createContainer: true,
+            },
+        };
+
+        // Assuming 'game' is declared in a broader scope if you need to reference it elsewhere
+        window.game = new Phaser.Game(config);
+        window.game.sceneTransitionManager = new SceneTransitionManager(game);
+    } catch (error) {
+        console.error('Failed to load external script or initialize the Phaser game:', error);
+    }
+}
+
+initializeGame();
